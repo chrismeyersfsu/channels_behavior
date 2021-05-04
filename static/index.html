@@ -1,0 +1,61 @@
+<html>
+  <body>
+    <button onclick="doit()">Connect</button>
+    <br><br>
+    <div id="wsheader" style="width: 100%; background-color: #ABBAEA; font-size: 48px;">Websocket Statistics</div>
+    <div id="wsresults" style="width: 100%; background-color: #ABBAEA; font-size: 48px;">&nbsp;</div>
+    <br><br>
+    <div id="wsstatus" style="width: 100%; background-color: #ABBAEA; font-size: 36px;">Disconnected</div>
+  </body>
+
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous"></script>
+<script>
+
+
+var STATE = {
+  'messages': [],
+  'messages_max': 1024*1024*10,
+
+};
+
+function calc_rate(window_start, window_end) {
+  var total = 0;
+  for (var i=0; i < STATE.messages.length; ++i) {
+    var msg = STATE.messages[i];
+    if (msg >= window_start && window_end <= window_end) {
+      total += 1;
+    }
+  }
+  return total / (window_end - window_start);
+}
+
+function doit() {
+  var s = new WebSocket("ws://127.0.0.1:8049/ws/");
+  s.addEventListener('open', function (event) {
+    $('#wsstatus').html("Connected")
+    console.log("Connected to debug websocket");
+  });
+
+  s.addEventListener('message', function (event) {
+    var now_milli = new Date().getTime();
+    var now_seconds = parseInt(now_milli / 1000);
+    var d = JSON.parse(event.data);
+    STATE.messages.push(now_seconds);
+
+    if (STATE.messages.length > STATE.messages_max) {
+      STATE.messages.shift();
+    }
+
+    var rate = calc_rate(now_seconds-6, now_seconds-1);
+
+    var diff = (now_milli - parseInt(d['ts_sent']))/1000.0;
+
+    $('#wsresults').html("Time to get: " + diff + " seconds<br>Rate over the last 5 seconds " + rate);
+  });
+}
+
+</script>
+</html>
