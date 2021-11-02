@@ -1,5 +1,4 @@
-all:
-	docker-compose
+all: docker-compose
 
-docker-compse:
-	docker-compose up -f docker-compose.yml
+docker-compose:
+	docker-compose up
